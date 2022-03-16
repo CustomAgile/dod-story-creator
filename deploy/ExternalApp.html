@@ -1,0 +1,2444 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Feature Definition of Done Story Creator</title>
+    <!--  (c) 2014 Rally Software Development Corp.  All Rights Reserved. -->
+    <!--  Build Date: Sun Sep 27 2015 17:06:23 GMT-0700 (PDT) -->
+    
+    <script type="text/javascript">
+        var APP_BUILD_DATE = "Sun Sep 27 2015 17:06:23 GMT-0700 (PDT)";
+        var CHECKSUM = [%= checksum %];
+    </script>
+    
+    <script type="text/javascript" src="https://rally1.rallydev.com/apps/2.0rc3/sdk-debug.js?apiKey=_PUT_APIKEY_HERE_"></script>
+
+    <script type="text/javascript">
+        Rally.onReady(function() {
+             
+/* Blob.js
+ * A Blob implementation.
+ * 2014-05-31
+ * 
+ * By Eli Grey, http://eligrey.com
+ * By Devin Samarin, https://github.com/eboyjr
+ * License: X11/MIT
+ *   See https://github.com/eligrey/Blob.js/blob/master/LICENSE.md
+ */
+
+/*global self, unescape */
+/*jslint bitwise: true, regexp: true, confusion: true, es5: true, vars: true, white: true,
+  plusplus: true */
+
+/*! @source http://purl.eligrey.com/github/Blob.js/blob/master/Blob.js */
+
+(function (view) {
+    "use strict";
+
+    view.URL = view.URL || view.webkitURL;
+
+    if (view.Blob && view.URL) {
+        try {
+            new Blob;
+            return;
+        } catch (e) {}
+    }
+
+    // Internally we use a BlobBuilder implementation to base Blob off of
+    // in order to support older browsers that only have BlobBuilder
+    var BlobBuilder = view.BlobBuilder || view.WebKitBlobBuilder || view.MozBlobBuilder || (function(view) {
+        var
+              get_class = function(object) {
+                return Object.prototype.toString.call(object).match(/^\[object\s(.*)\]$/)[1];
+            }
+            , FakeBlobBuilder = function BlobBuilder() {
+                this.data = [];
+            }
+            , FakeBlob = function Blob(data, type, encoding) {
+                this.data = data;
+                this.size = data.length;
+                this.type = type;
+                this.encoding = encoding;
+            }
+            , FBB_proto = FakeBlobBuilder.prototype
+            , FB_proto = FakeBlob.prototype
+            , FileReaderSync = view.FileReaderSync
+            , FileException = function(type) {
+                this.code = this[this.name = type];
+            }
+            , file_ex_codes = (
+                  "NOT_FOUND_ERR SECURITY_ERR ABORT_ERR NOT_READABLE_ERR ENCODING_ERR "
+                + "NO_MODIFICATION_ALLOWED_ERR INVALID_STATE_ERR SYNTAX_ERR"
+            ).split(" ")
+            , file_ex_code = file_ex_codes.length
+            , real_URL = view.URL || view.webkitURL || view
+            , real_create_object_URL = real_URL.createObjectURL
+            , real_revoke_object_URL = real_URL.revokeObjectURL
+            , URL = real_URL
+            , btoa = view.btoa
+            , atob = view.atob
+            
+            , ArrayBuffer = view.ArrayBuffer
+            , Uint8Array = view.Uint8Array
+        ;
+        FakeBlob.fake = FB_proto.fake = true;
+        while (file_ex_code--) {
+            FileException.prototype[file_ex_codes[file_ex_code]] = file_ex_code + 1;
+        }
+        if (!real_URL.createObjectURL) {
+            URL = view.URL = {};
+        }
+        URL.createObjectURL = function(blob) {
+            var
+                  type = blob.type
+                , data_URI_header
+            ;
+            if (type === null) {
+                type = "application/octet-stream";
+            }
+            if (blob instanceof FakeBlob) {
+                data_URI_header = "data:" + type;
+                if (blob.encoding === "base64") {
+                    return data_URI_header + ";base64," + blob.data;
+                } else if (blob.encoding === "URI") {
+                    return data_URI_header + "," + decodeURIComponent(blob.data);
+                } if (btoa) {
+                    return data_URI_header + ";base64," + btoa(blob.data);
+                } else {
+                    return data_URI_header + "," + encodeURIComponent(blob.data);
+                }
+            } else if (real_create_object_URL) {
+                return real_create_object_URL.call(real_URL, blob);
+            }
+        };
+        URL.revokeObjectURL = function(object_URL) {
+            if (object_URL.substring(0, 5) !== "data:" && real_revoke_object_URL) {
+                real_revoke_object_URL.call(real_URL, object_URL);
+            }
+        };
+        FBB_proto.append = function(data/*, endings*/) {
+            var bb = this.data;
+            // decode data to a binary string
+            if (Uint8Array && (data instanceof ArrayBuffer || data instanceof Uint8Array)) {
+                var
+                      str = ""
+                    , buf = new Uint8Array(data)
+                    , i = 0
+                    , buf_len = buf.length
+                ;
+                for (; i < buf_len; i++) {
+                    str += String.fromCharCode(buf[i]);
+                }
+                bb.push(str);
+            } else if (get_class(data) === "Blob" || get_class(data) === "File") {
+                if (FileReaderSync) {
+                    var fr = new FileReaderSync;
+                    bb.push(fr.readAsBinaryString(data));
+                } else {
+                    // async FileReader won't work as BlobBuilder is sync
+                    throw new FileException("NOT_READABLE_ERR");
+                }
+            } else if (data instanceof FakeBlob) {
+                if (data.encoding === "base64" && atob) {
+                    bb.push(atob(data.data));
+                } else if (data.encoding === "URI") {
+                    bb.push(decodeURIComponent(data.data));
+                } else if (data.encoding === "raw") {
+                    bb.push(data.data);
+                }
+            } else {
+                if (typeof data !== "string") {
+                    data += ""; // convert unsupported types to strings
+                }
+                // decode UTF-16 to binary string
+                bb.push(unescape(encodeURIComponent(data)));
+            }
+        };
+        FBB_proto.getBlob = function(type) {
+            if (!arguments.length) {
+                type = null;
+            }
+            return new FakeBlob(this.data.join(""), type, "raw");
+        };
+        FBB_proto.toString = function() {
+            return "[object BlobBuilder]";
+        };
+        FB_proto.slice = function(start, end, type) {
+            var args = arguments.length;
+            if (args < 3) {
+                type = null;
+            }
+            return new FakeBlob(
+                  this.data.slice(start, args > 1 ? end : this.data.length)
+                , type
+                , this.encoding
+            );
+        };
+        FB_proto.toString = function() {
+            return "[object Blob]";
+        };
+        FB_proto.close = function() {
+            this.size = 0;
+            delete this.data;
+        };
+        return FakeBlobBuilder;
+    }(view));
+
+    view.Blob = function Blob(blobParts, options) {
+        var type = options ? (options.type || "") : "";
+        var builder = new BlobBuilder();
+        if (blobParts) {
+            for (var i = 0, len = blobParts.length; i < len; i++) {
+                builder.append(blobParts[i]);
+            }
+        }
+        return builder.getBlob(type);
+    };
+}(typeof self !== "undefined" && self || typeof window !== "undefined" && window || this.content || this));
+/* FileSaver.js
+ *  A saveAs() FileSaver implementation.
+ *  2014-05-27
+ *
+ *  By Eli Grey, http://eligrey.com
+ *  License: X11/MIT
+ *    See https://github.com/eligrey/FileSaver.js/blob/master/LICENSE.md
+ */
+
+/*global self */
+/*jslint bitwise: true, indent: 4, laxbreak: true, laxcomma: true, smarttabs: true, plusplus: true */
+
+/*! @source http://purl.eligrey.com/github/FileSaver.js/blob/master/FileSaver.js */
+
+var saveAs = saveAs
+  // IE 10+ (native saveAs)
+  || (typeof navigator !== "undefined" &&
+      navigator.msSaveOrOpenBlob && navigator.msSaveOrOpenBlob.bind(navigator))
+  // Everyone else
+  || (function(view) {
+    "use strict";
+    // IE <10 is explicitly unsupported
+    if (typeof navigator !== "undefined" &&
+        /MSIE [1-9]\./.test(navigator.userAgent)) {
+        return;
+    }
+    var
+          doc = view.document
+          // only get URL when necessary in case Blob.js hasn't overridden it yet
+        , get_URL = function() {
+            return view.URL || view.webkitURL || view;
+        }
+        , save_link = doc.createElementNS("http://www.w3.org/1999/xhtml", "a")
+        , can_use_save_link = !view.externalHost && "download" in save_link
+        , click = function(node) {
+            var event = doc.createEvent("MouseEvents");
+            event.initMouseEvent(
+                "click", true, false, view, 0, 0, 0, 0, 0
+                , false, false, false, false, 0, null
+            );
+            node.dispatchEvent(event);
+        }
+        , webkit_req_fs = view.webkitRequestFileSystem
+        , req_fs = view.requestFileSystem || webkit_req_fs || view.mozRequestFileSystem
+        , throw_outside = function(ex) {
+            (view.setImmediate || view.setTimeout)(function() {
+                throw ex;
+            }, 0);
+        }
+        , force_saveable_type = "application/octet-stream"
+        , fs_min_size = 0
+        , deletion_queue = []
+        , process_deletion_queue = function() {
+            var i = deletion_queue.length;
+            while (i--) {
+                var file = deletion_queue[i];
+                if (typeof file === "string") { // file is an object URL
+                    get_URL().revokeObjectURL(file);
+                } else { // file is a File
+                    file.remove();
+                }
+            }
+            deletion_queue.length = 0; // clear queue
+        }
+        , dispatch = function(filesaver, event_types, event) {
+            event_types = [].concat(event_types);
+            var i = event_types.length;
+            while (i--) {
+                var listener = filesaver["on" + event_types[i]];
+                if (typeof listener === "function") {
+                    try {
+                        listener.call(filesaver, event || filesaver);
+                    } catch (ex) {
+                        throw_outside(ex);
+                    }
+                }
+            }
+        }
+        , FileSaver = function(blob, name) {
+            // First try a.download, then web filesystem, then object URLs
+            var
+                  filesaver = this
+                , type = blob.type
+                , blob_changed = false
+                , object_url
+                , target_view
+                , get_object_url = function() {
+                    var object_url = get_URL().createObjectURL(blob);
+                    deletion_queue.push(object_url);
+                    return object_url;
+                }
+                , dispatch_all = function() {
+                    dispatch(filesaver, "writestart progress write writeend".split(" "));
+                }
+                // on any filesys errors revert to saving with object URLs
+                , fs_error = function() {
+                    // don't create more object URLs than needed
+                    if (blob_changed || !object_url) {
+                        object_url = get_object_url(blob);
+                    }
+                    if (target_view) {
+                        target_view.location.href = object_url;
+                    } else {
+                        window.open(object_url, "_blank");
+                    }
+                    filesaver.readyState = filesaver.DONE;
+                    dispatch_all();
+                }
+                , abortable = function(func) {
+                    return function() {
+                        if (filesaver.readyState !== filesaver.DONE) {
+                            return func.apply(this, arguments);
+                        }
+                    };
+                }
+                , create_if_not_found = {create: true, exclusive: false}
+                , slice
+            ;
+            filesaver.readyState = filesaver.INIT;
+            if (!name) {
+                name = "download";
+            }
+            if (can_use_save_link) {
+                object_url = get_object_url(blob);
+                save_link.href = object_url;
+                save_link.download = name;
+                click(save_link);
+                filesaver.readyState = filesaver.DONE;
+                dispatch_all();
+                return;
+            }
+            // Object and web filesystem URLs have a problem saving in Google Chrome when
+            // viewed in a tab, so I force save with application/octet-stream
+            // http://code.google.com/p/chromium/issues/detail?id=91158
+            if (view.chrome && type && type !== force_saveable_type) {
+                slice = blob.slice || blob.webkitSlice;
+                blob = slice.call(blob, 0, blob.size, force_saveable_type);
+                blob_changed = true;
+            }
+            // Since I can't be sure that the guessed media type will trigger a download
+            // in WebKit, I append .download to the filename.
+            // https://bugs.webkit.org/show_bug.cgi?id=65440
+            if (webkit_req_fs && name !== "download") {
+                name += ".download";
+            }
+            if (type === force_saveable_type || webkit_req_fs) {
+                target_view = view;
+            }
+            if (!req_fs) {
+                fs_error();
+                return;
+            }
+            fs_min_size += blob.size;
+            req_fs(view.TEMPORARY, fs_min_size, abortable(function(fs) {
+                fs.root.getDirectory("saved", create_if_not_found, abortable(function(dir) {
+                    var save = function() {
+                        dir.getFile(name, create_if_not_found, abortable(function(file) {
+                            file.createWriter(abortable(function(writer) {
+                                writer.onwriteend = function(event) {
+                                    target_view.location.href = file.toURL();
+                                    deletion_queue.push(file);
+                                    filesaver.readyState = filesaver.DONE;
+                                    dispatch(filesaver, "writeend", event);
+                                };
+                                writer.onerror = function() {
+                                    var error = writer.error;
+                                    if (error.code !== error.ABORT_ERR) {
+                                        fs_error();
+                                    }
+                                };
+                                "writestart progress write abort".split(" ").forEach(function(event) {
+                                    writer["on" + event] = filesaver["on" + event];
+                                });
+                                writer.write(blob);
+                                filesaver.abort = function() {
+                                    writer.abort();
+                                    filesaver.readyState = filesaver.DONE;
+                                };
+                                filesaver.readyState = filesaver.WRITING;
+                            }), fs_error);
+                        }), fs_error);
+                    };
+                    dir.getFile(name, {create: false}, abortable(function(file) {
+                        // delete file if it already exists
+                        file.remove();
+                        save();
+                    }), abortable(function(ex) {
+                        if (ex.code === ex.NOT_FOUND_ERR) {
+                            save();
+                        } else {
+                            fs_error();
+                        }
+                    }));
+                }), fs_error);
+            }), fs_error);
+        }
+        , FS_proto = FileSaver.prototype
+        , saveAs = function(blob, name) {
+            return new FileSaver(blob, name);
+        }
+    ;
+    FS_proto.abort = function() {
+        var filesaver = this;
+        filesaver.readyState = filesaver.DONE;
+        dispatch(filesaver, "abort");
+    };
+    FS_proto.readyState = FS_proto.INIT = 0;
+    FS_proto.WRITING = 1;
+    FS_proto.DONE = 2;
+
+    FS_proto.error =
+    FS_proto.onwritestart =
+    FS_proto.onprogress =
+    FS_proto.onwrite =
+    FS_proto.onabort =
+    FS_proto.onerror =
+    FS_proto.onwriteend =
+        null;
+
+    view.addEventListener("unload", process_deletion_queue, false);
+    saveAs.unload = function() {
+        process_deletion_queue();
+        view.removeEventListener("unload", process_deletion_queue, false);
+    };
+    return saveAs;
+}(
+       typeof self !== "undefined" && self
+    || typeof window !== "undefined" && window
+    || this.content
+));
+// `self` is undefined in Firefox for Android content script context
+// while `this` is nsIContentFrameMessageManager
+// with an attribute `content` that corresponds to the window
+
+if (typeof module !== "undefined" && module !== null) {
+  module.exports = saveAs;
+} else if ((typeof define !== "undefined" && define !== null) && (define.amd != null)) {
+  define([], function() {
+    return saveAs;
+  });
+}
+/**
+ * A link that pops up a version dialog box
+ */
+
+Ext.define('Rally.technicalservices.InfoLink',{
+    extend: 'Ext.Component',
+    alias: 'widget.tsinfolink',
+    
+    /**
+     * @cfg {String} informationHtml
+     * Additional text to be displayed on the popup dialog (for exmaple,
+     * to add a description of the app's use or functionality)
+     */
+    informationHtml: null,
+    
+    /**
+     * 
+     * cfg {String} title
+     * The title for the dialog box
+     */
+     title: "Build Information",
+    
+    renderTpl: "<div id='{id}-infolinkWrap' class='tsinfolink'>i</div>",
+
+    initComponent: function() {
+        this.callParent(arguments);
+       
+    },
+    
+    onRender: function() {
+        this.callParent(arguments);
+        this.mon(this.el,'click',this.onClick,this);
+    },
+    _generateChecksum: function(string){
+        var chk = 0x12345678,
+            i;
+        string = string.replace(/var CHECKSUM = .*;/,"");
+        string = string.replace(/\s/g,"");  //Remove all whitespace from the string.
+        
+        for (i = 0; i < string.length; i++) {
+            chk += (string.charCodeAt(i) * i);
+        }
+    
+        return chk;
+    },
+    _checkChecksum: function(container) {
+        var me = this;
+        Ext.Ajax.request({
+            url: document.URL,
+            params: {
+                id: 1
+            },
+            success: function (response) {
+                text = response.responseText;
+                if ( CHECKSUM ) {
+                    if ( CHECKSUM !== me._generateChecksum(text) ) {
+                        console.log("Checksums don't match!");
+                        if ( me.dialog ) {
+                            me.dialog.add({xtype:'container',html:'Checksums do not match'});
+                        }
+                    }
+                }
+            }
+        });
+    },
+    onClick: function(e) {
+        var me = this;
+        this._checkChecksum(this);
+        
+        var dialog_items = [];
+        
+        if ( this.informationHtml ) {
+            dialog_items.push({
+                xtype:'container',
+                html: this.informationHtml
+            });
+        }
+                
+        dialog_items.push({
+            xtype:'container',
+            html:"This app was created by the Rally Technical Services Team."
+        });
+        
+        if ( APP_BUILD_DATE ) {
+            dialog_items.push({
+                xtype:'container',
+                html:'Build date/time: ' + APP_BUILD_DATE
+            });
+        }
+        
+        if (this.dialog){this.dialog.destroy();}
+        this.dialog = Ext.create('Rally.ui.dialog.Dialog',{
+            defaults: { padding: 5, margin: 5 },
+            closable: true,
+            draggable: true,
+            title: me.title,
+            items: dialog_items
+        });
+        this.dialog.show();
+    }
+});
+
+/*
+ */
+Ext.define('Rally.technicalservices.Logger',{
+    constructor: function(config){
+        Ext.apply(this,config);
+    },
+    log: function(args){
+        var timestamp = "[ " + Ext.util.Format.date(new Date(), "Y-m-d H:i:s.u") + " ]";
+        //var output_args = arguments;
+        //output_args.unshift( [ "[ " + timestamp + " ]" ] );
+        //output_args = Ext.Array.push(output_args,arguments);
+        
+        var output_args = [];
+        output_args = Ext.Array.push(output_args,[timestamp]);
+        output_args = Ext.Array.push(output_args, Ext.Array.slice(arguments,0));
+
+        window.console && console.log.apply(console,output_args);
+    }
+
+});
+
+Ext.define('Rally.technicalservices.data.Template',{
+    templateArtifact: null,
+    templateTasks: null, 
+    model: null,
+    taskModel: null,
+    constructor: function(config) {
+        Ext.apply(this,config);
+    },
+    _loadTasks: function(templateTasks){
+        var deferred = Ext.create('Deft.Deferred');
+
+        if (templateTasks){
+            deferred.resolve();
+        }
+
+        this.templateArtifact.getCollection('Tasks').load({
+            scope: this,
+            callback: function(tasks,operation,success){
+                deferred.resolve(tasks);
+            }
+        });
+        return deferred;
+    },
+    _loadModel: function(type){
+        var deferred = Ext.create('Deft.Deferred');
+        Rally.data.ModelFactory.getModel({
+            type: type,
+            scope: this,
+            success: function(model) {
+                deferred.resolve(model);
+            }
+        });
+        return deferred;
+    },
+    _hasTasks: function(){
+        return(this.templateArtifact.get('Tasks').Count > 0);
+    },
+    copy: function(copyRequest){
+        var deferred = Ext.create('Deft.Deferred');
+        if (this.templateArtifact){
+            this._copyArtifact(this.model, this._getDataToCopy(copyRequest)).then({
+                scope: this,
+                success: function(result){
+                    copyRequest.artifactResult = result;
+                    if (typeof result == 'object' && this._hasTasks()){
+                         if (this._hasTasks()){
+                            var fieldsToCopy = copyRequest.copyCollections['Tasks'];
+                            this._copyTasks(result, fieldsToCopy).then({
+                                scope: this,
+                                success: function(results){
+                                    deferred.resolve(copyRequest);
+                                }
+                            });
+                        }
+                    } else {
+                        deferred.resolve(copyRequest);
+                    }
+                }
+            });
+        }
+        return deferred;
+    },
+    _copyTasks: function(newParent, fieldsToCopy){
+        var deferred = Ext.create('Deft.Deferred');
+        
+        if (this.templateTasks == null){
+            this._loadTasks(this.templateTasks).then({
+                scope: this,
+                success: function(templateTasks){
+                    this.templateTasks = templateTasks;
+                    this._loadModel('Task').then({
+                        scope: this,
+                        success: function(taskModel){
+                            this._copyTemplateTasks(taskModel, newParent, fieldsToCopy).then({
+                                scope: this,
+                                success: function(results){
+                                    deferred.resolve(results);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        } else {
+            this._loadModel('Task').then({
+                scope: this,
+                success: function(taskModel){
+                    this._copyTemplateTasks(taskModel, newParent, fieldsToCopy).then({
+                        scope: this,
+                        success: function(results){
+                            deferred.resolve(results);
+                        }
+                    });
+                }
+            });
+        }
+         return deferred;
+    },
+    _copyTemplateTasks: function(taskModel, parent,fieldsToCopy){
+        var deferred = Ext.create('Deft.Deferred');
+        var promises = [];
+        Ext.each(this.templateTasks, function(task){
+            var fields = {};
+            Ext.each(fieldsToCopy, function(f){
+                fields[f] = task.get(f);
+            });
+            fields['WorkProduct'] = parent.get('_ref');
+            var fn = this._copyArtifact;
+            promises.push(function(){
+                var deferred = Ext.create('Deft.Deferred');
+                fn(taskModel,fields).then({
+                    success: function(result){
+                        deferred.resolve(result);
+                    }
+                });
+                return deferred;
+            });
+        },this);
+
+        Deft.Chain.sequence(promises,this).then({
+            scope: this,
+            success: function (results) {
+                deferred.resolve(results);
+            }
+        });
+        return deferred;
+
+    },
+    _copyArtifact: function(model, fields){
+        var deferred = Ext.create('Deft.Deferred');
+
+        var record = Ext.create(model, fields);
+        record.save({
+            callback: function(record, operation, success) {
+                if (operation.wasSuccessful()){
+                    deferred.resolve(record);
+                } else {
+                    deferred.resolve(operation.error.errors[0]);
+                }
+            }
+        });
+        return deferred;
+    },
+    _getDataToCopy: function(copyRequest){
+        var new_fields = {};
+        Ext.each(copyRequest.copyFields, function(f){
+            new_fields[f] = this.templateArtifact.get(f);
+        }, this);
+        
+        if (!_.isEmpty(copyRequest.overrideFields)){
+            Ext.Object.each(copyRequest.overrideFields, function(key,value){
+                if (value){
+                    new_fields[key] = value;
+                }
+            });
+        }
+        
+        Ext.Object.each(copyRequest.transformers,function(field,fn){
+            new_fields[field] = fn(this.templateArtifact);
+        }, this);
+        return new_fields;
+    }
+});
+Ext.define('Rally.technicalservices.data.CopyRequest',{
+    parentOid: null,
+    keyField: 'c_DoDStoryType',
+    keyFieldValue: null, 
+    overrideFields: null,
+    referenceFields: null,
+    transformers: null,
+    identifier: null,
+    copyFields: ['c_DoDStoryType','Project','Name','Description','Release'],
+    copyCollections: {"Tasks": ['Name','Description','Project']},
+    constructor: function(config){
+        Ext.apply(this,config);
+    }
+});
+Ext.define('Rally.technicalservices.FileUtilities', {
+    singleton: true,
+    logger: new Rally.technicalservices.Logger(),
+    saveCSVToFile:function(csv,file_name,type_object){
+            if (type_object == undefined){
+                type_object = {type:'text/csv;charset=utf-8'};
+            }
+            var blob = new Blob([csv],type_object);
+            saveAs(blob,file_name);
+    },
+    saveTextAsFile: function(textToWrite, fileName)
+    {
+        var textFileAsBlob = new Blob([textToWrite], {type:'text/plain'});
+        var fileNameToSaveAs = fileName;
+
+        var downloadLink = document.createElement("a");
+        downloadLink.download = fileNameToSaveAs;
+        downloadLink.innerHTML = "Download File";
+        if (window.webkitURL != null)
+        {
+            // Chrome allows the link to be clicked
+            // without actually adding it to the DOM.
+            downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+        }
+        else
+        {
+            // Firefox requires the link to be added to the DOM
+            // before it can be clicked.
+            downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+            downloadLink.onclick = destroyClickedElement;
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+        }
+        downloadLink.click();
+    },
+    destroyClickedElement: function(event)
+    {
+        document.body.removeChild(event.target);
+    },
+    convertDataArrayToCSVText: function(data_array, requestedFieldHash){
+       
+        var text = '';
+        Ext.each(Object.keys(requestedFieldHash), function(key){
+            text += requestedFieldHash[key] + ',';
+        });
+        text = text.replace(/,$/,'\n');
+        
+        Ext.each(data_array, function(d){
+            Ext.each(Object.keys(requestedFieldHash), function(key){
+                if (d[key]){
+                    if (typeof d[key] === 'object'){
+                        if (d[key].FormattedID) {
+                            text += Ext.String.format("\"{0}\",",d[key].FormattedID ); 
+                        } else if (d[key].Name) {
+                            text += Ext.String.format("\"{0}\",",d[key].Name );                    
+                        } else if (!isNaN(Date.parse(d[key]))){
+                            text += Ext.String.format("\"{0}\",",Rally.util.DateTime.formatWithDefaultDateTime(d[key]));
+                        }else {
+                            text += Ext.String.format("\"{0}\",",d[key].toString());
+                        }
+                    } else {
+                        text += Ext.String.format("\"{0}\",",d[key] );                    
+                    }
+                } else {
+                    text += ',';
+                }
+            },this);
+            text = text.replace(/,$/,'\n');
+        },this);
+        return text;
+    },
+    /*
+     * will render using your grid renderer.  If you want it to ignore the grid renderer, 
+     * have the column set _csvIgnoreRender: true
+     */
+    getCSVFromGrid:function(app, grid){
+        var deferred = Ext.create('Deft.Deferred');
+
+        var store = Ext.create('Rally.data.wsapi.Store',{
+            fetch: grid.getStore().config.fetch,
+            filters: grid.getStore().config.filters,
+            model: grid.getStore().config.model,
+            pageSize: 200
+        });
+
+        var columns = grid.columns;
+        var column_names = [];
+        var headers = [];
+        
+        Ext.Array.each(columns,function(column){
+            if ( column.dataIndex || column.renderer ) {
+                column_names.push(column.dataIndex);
+                if ( column.csvText ) {
+                    headers.push(column.csvText);
+                } else {
+                    headers.push(column.text);
+                }
+            }
+        });
+
+        var record_count = grid.getStore().getTotalCount(),
+            page_size = grid.getStore().pageSize,
+            pages = Math.ceil(record_count/page_size),
+            promises = [];
+
+        for (var page = 1; page <= pages; page ++ ) {
+            promises.push(this.loadStorePage(app, grid, store, columns, page, pages));
+        }
+        Deft.Promise.all(promises).then({
+            success: function(csvs){
+                var csv = [];
+                csv.push('"' + headers.join('","') + '"');
+                _.each(csvs, function(c){
+                    _.each(c, function(line){
+                        csv.push(line);
+                    });
+                });
+                csv = csv.join('\r\n');
+                deferred.resolve(csv);
+                app.setLoading(false);
+            }
+        });
+        return deferred.promise;
+
+    },
+    loadStorePage: function(app, grid, store, columns, page, total_pages){
+        var deferred = Ext.create('Deft.Deferred');
+        this.logger.log('loadStorePage',page, total_pages);
+
+        var mock_meta_data = {
+            align: "right",
+            classes: [],
+            cellIndex: 9,
+            column: null,
+            columnIndex: 9,
+            innerCls: undefined,
+            recordIndex: 5,
+            rowIndex: 5,
+            style: "",
+            tdAttr: "",
+            tdCls: "x-grid-cell x-grid-td x-grid-cell-headerId-gridcolumn-1029 x-grid-cell-last x-unselectable",
+            unselectableAttr: "unselectable='on'"
+        }
+
+        store.loadPage(page, {
+            callback: function (records) {
+                var csv = [];
+                app.setLoading(Ext.String.format('Page {0} of {1} loaded',page, total_pages));
+                for (var i = 0; i < records.length; i++) {
+                    var record = records[i];
+
+                    var node_values = [];
+                    Ext.Array.each(columns, function (column) {
+                        if (column.xtype != 'rallyrowactioncolumn') {
+                            if (column.dataIndex) {
+                                var column_name = column.dataIndex;
+                                var display_value = record.get(column_name);
+
+                                if (!column._csvIgnoreRender && column.renderer) {
+                                    if (column.exportRenderer) {
+                                        display_value = column.exportRenderer(display_value, mock_meta_data, record, 0, 0, store, grid.getView());
+                                    } else {
+                                        display_value = column.renderer(display_value, mock_meta_data, record, 0, 0, store, grid.getView());
+                                    }
+                                }
+                                node_values.push(display_value);
+                            } else {
+                                var display_value = null;
+                                if (!column._csvIgnoreRender && column.renderer) {
+                                    if (column.exportRenderer) {
+                                        display_value = column.exportRenderer(display_value, mock_meta_data, record, record, 0, 0, store, grid.getView());
+                                    } else {
+                                        display_value = column.renderer(display_value, mock_meta_data, record, record, 0, 0, store, grid.getView());
+                                    }
+                                    node_values.push(display_value);
+                                }
+                            }
+
+                        }
+                    }, this);
+                    csv.push('"' + node_values.join('","') + '"');
+                }
+                deferred.resolve(csv);
+            },
+            scope: this
+        });
+        return deferred;
+    }
+
+});
+Ext.define('Rally.technicalservices.dialog.Filter',{
+    extend: Rally.ui.dialog.Dialog,
+    logger: new Rally.technicalservices.Logger(),
+    model: 'PortfolioItem/Feature',
+    whitelistFields: ['State'],
+    includeDropdownFields: true,
+    autoShow: true,
+    componentCls: "rly-popover dark-container",
+    app: null,
+    initComponent: function() {
+        this.items = this._getItems();
+        this.buttons = this._getButtonConfig();
+        this.callParent(arguments);
+        this.addEvents(
+            'customFilter'
+        );
+
+        Rally.data.ModelFactory.getModel({
+            type: this.model,
+            scope: this,
+            success: function(model){
+                this.filterableFields = this._getFilterableFields(model);
+                this._initializeFilters(this.filters);
+            }
+        });
+    },
+    _getFilterableFields: function(model){
+        var fields = model.getFields(),
+            whitelistFields = this.whitelistFields,
+            filterableFields = [],
+            dropdownListFields = this.includeDropdownFields;
+
+        _.each(fields, function(f){
+            if (f.hidden === false && f.attributeDefinition){
+                var attr_def = f.attributeDefinition;
+
+                if (Ext.Array.contains(whitelistFields, attr_def.ElementName)){
+                    filterableFields.push(f);
+                } else {
+                    console.log('aatr', attr_def.Name,attr_def);
+                    if ( attr_def.Name == "Formatted ID") {
+                        filterableFields.push(f);
+                    }
+                    if (dropdownListFields && attr_def.Constrained &&
+                        attr_def.AttributeType == 'STRING'){
+                        filterableFields.push(f);
+                    }
+                }
+            }
+        },this);
+        this.logger.log('filterableFields',filterableFields);
+        this.filterFields = _.uniq(filterableFields);
+    },
+    _initializeFilters: function(filters){
+        this.logger.log('_initializeFilters', filters);
+
+        if (filters && filters.length > 0){
+            Ext.each(filters, function(filter){
+                var property = filter.fieldName || filter.property;
+                var value = filter.selectedValue || filter.value;
+                var operator = filter.operator;
+                
+                this._addNewRow(property, operator, value);
+            },this);
+        } else {
+            this._addNewRow();
+        }
+    },
+    _getFieldStore: function(){
+        var fields = [];
+        Ext.each(this.filterFields, function(field){
+            fields.push({
+                name: field.name,
+                displayName: field.displayName,
+                attributeType: field.attributeDefinition.AttributeType,
+                schemaType: field.attributeDefinition.SchemaType,
+                modelType: field.modelType,
+                isConstrained: field.attributeDefinition.Constrained
+            });
+        },this);
+
+        return Ext.create('Rally.data.custom.Store',{
+            data: fields,
+            sorters: [{property:'displayName'}]
+        });
+    },
+    _addNewRow: function(property, operator, value) {
+        this.logger.log('_addNewRow', property, operator, value);
+
+        var field_store = this._getFieldStore(this.filterableFields);
+        var items = [];
+        items.push({
+            xtype: "rallybutton",
+            itemId: 'btn-remove',
+            text: '-',
+            scope: this,
+            margin: 5,
+            handler: function(btn){
+                btn.bubble(this._removeRow, this);
+            }
+        });
+
+        items.push({
+            xtype: "rallycombobox",
+            itemId: 'cb-filter-field',
+            store: field_store,
+            displayField: 'displayName',
+            valueField: 'name',
+            listeners: {
+                scope: this,
+                select: function(cb){
+                    this._updateFilterCombos(cb, operator, value);
+                },
+                ready: function(cb){
+                    if (property) {
+                        cb.setValue(property);
+                        this._updateFilterCombos(cb,operator,value);
+                    }
+                }
+            },
+            allowNoEntry: true,
+            noEntryText: 'Choose Field...',
+            noEntryValue: null,
+            margin: 5,
+            value: null
+        });
+
+        var row = Ext.create('Ext.Container',{
+            layout: {type: 'hbox'},
+            items: items
+
+        });
+        this.down('#ct-rows').add(row);
+        this._validateFilters();
+    },
+    _updateFilterCombos: function(cb, operator, value){
+        var parent_ct = cb.up(null,1);
+        var rec = cb.getRecord();
+
+        this.logger.log('_updateFilterCombos', cb.itemId, rec, operator, value);
+
+        if (parent_ct){
+            if (parent_ct.down('#cb-filter-operator')) {
+                parent_ct.down('#cb-filter-operator').destroy();
+                parent_ct.down('#cb-filter-value').destroy();
+            }
+
+            var op_val = operator || '=';
+            var operator_ctl = this._getOperatorControl(rec, op_val, 'cb-filter-operator');
+            parent_ct.add(operator_ctl);
+
+            var value_val = value || null;
+            var value_ctl = this._getValueControl(rec, value_val, 'cb-filter-value');
+            parent_ct.add(value_ctl);
+
+        }
+    },
+
+    _removeRow: function(btn){
+        var ct = btn.up(null,1);
+        if (ct){
+            ct.destroy();
+        }
+        this._validateFilters();
+    },
+    _getButtonConfig: function() {
+        return [{
+            xtype: "rallybutton",
+            itemId: "cancelButton",
+            cls: "secondary rly-small",
+            text: "Cancel",
+            width: 90,
+            handler: this._onCancelClick,
+            scope: this
+        }, {
+            xtype: "rallybutton",
+            itemId: "applyButton",
+            cls: "primary rly-small",
+            text: "Apply",
+            width: 90,
+            handler: this._onApplyClick,
+            scope: this,
+            disabled: true
+        }]
+    },
+    _onClearAll: function(){
+        this.down('#ct-rows').removeAll();
+        this._addNewRow();
+    },
+    _onCancelClick: function() {
+        this.destroy()
+    },
+    _validateFilters: function(ct){
+        var disabled = false;
+        var add_disabled = false;
+
+        var rows = this.down('#ct-rows').items.items;
+        if (rows.length == 0){
+            disabled = true;
+        }
+
+        Ext.each(this.down('#ct-rows').items.items, function(item){
+            item.down('#btn-remove').setDisabled(rows.length == 1);
+
+            var property = null;
+            if (item.down('#cb-filter-field')){
+                property = item.down('#cb-filter-field').getValue();
+            }
+            var operator = null;
+            if (item.down('#cb-filter-operator')){
+                operator = item.down('#cb-filter-operator').getValue();
+            }
+
+            if (property == null || operator == null || property.length == 0 || operator.length == 0){
+                disabled = true, add_disabled = true;
+            }
+
+            var val = null;
+            if (item.down('#cb-filter-value')){
+                val = item.down('#cb-filter-value').getValue()
+                if (item.down('#cb-filter-value').xtype == 'rallynumberfield'){
+                    if (val == null || val.toString.length == 0){
+                        disabled = true, add_disabled = true;
+                    }
+                }
+            };
+            if (rows.length == 1 && property == null && operator == null && val == null){
+                disabled = false;   //clear filters
+            }
+        }, this);
+        this.logger.log('_validateFilters',disabled);
+        this.down('#applyButton').setDisabled(disabled);
+        this.down('#btn-add').setDisabled(add_disabled);
+    },
+    /*
+     * In some cases, we want to strip the value returned or make it look
+     * different somehow.  (E.g., we want the preliminary estimate to just show the ID
+     */
+    _cleanValue: function(val) {
+        if ( /\/preliminaryestimate\//.test(val)) {
+            val = val.replace(/\/preliminaryestimate\//,"");
+            val = parseInt(val,10);
+        }
+        if (/\/state\//.test(val)) {
+            val = val.replace(/\/state\//,"")
+            val = parseInt(val,10);
+        }
+
+
+        return val;
+    },
+    _onApplyClick: function() {
+        var filters = [];
+        Ext.each(this.down('#ct-rows').items.items, function(item){
+            if (this.down('#cb-filter-operator')){
+                var field_name = item.down('#cb-filter-field').getValue();
+                var operator = item.down('#cb-filter-operator').getValue();
+                var selected_value = this._cleanValue( item.down('#cb-filter-value').getValue() );
+                var display_property = item.down('#cb-filter-field').getRecord().get('displayName');
+                var display_value = item.down('#cb-filter-value').displayValue || val;
+
+                var property = field_name;
+                var val = selected_value;
+                
+                if ( field_name == "State" ) {
+                    property = "State.Name";
+                    val = display_value;
+                }
+
+                if (property && operator) {
+                    filters.push({
+                        fieldName: field_name,
+                        property: property,
+                        operator: operator,
+                        value: val,
+                        displayProperty: display_property,
+                        displayValue: display_value,
+                        selectedValue: selected_value
+                    });
+                }
+            }
+        }, this);
+
+        this.fireEvent("customfilter", filters);
+        this.destroy()
+    },
+    _getItems: function() {
+        return [{
+            xtype: "container",
+            cls: "custom-filter-header",
+            layout: {type: 'hbox'},
+            defaults: {
+                xtype: "component",
+                cls: "filter-panel-label"
+            },
+            items: [{
+                height: 1,
+                width: 30
+            }, {
+                html: "Field",
+                width: 155
+            }, {
+                html: "Operator",
+                width:  80
+            }, {
+                html: "Value",
+                width:  155
+            }]
+        }, {
+            xtype: "container",
+            itemId: "ct-rows",
+            layout: {type: 'vbox'}
+        },{
+            xtype: "container",
+            itemId: 'ct-footer',
+            items: [{
+                xtype:'rallybutton',
+                itemId: 'clearButton',
+                cls: "secondary rly-small",
+                text: 'Clear All',
+                width: 90,
+                align: 'right',
+                margin: '5 5 5 220',
+                scope: this,
+                handler: this._onClearAll
+            },{
+                xtype:'rallybutton',
+                itemId: 'btn-add',
+                text: 'Add New',
+                width: 90,
+                cls: "primary rly-small",
+                align: 'right',
+
+                margin: 5,
+                scope: this,
+                handler: this._addNewRow
+            }]
+        }]
+    },
+    _getOperatorControl: function(field, operatorValue, itemId){
+        this.logger.log('_getOperatorControl',field, operatorValue);
+        var operators = ['='];
+        var operator_value = operatorValue || '=';
+        //We should be able to get these back from the field, but its not consistent
+        //so we are going to cheat and hardcode them
+        if (!field.get('isConstrained')){
+            switch(field.get('attributeType')){
+                case 'STRING':
+                case 'TEXT':
+                    operators = ['=','contains'];
+                    break;
+                case 'DECIMAL':
+                case 'INTEGER':
+                case 'QUANTITY':
+                    operators = ['=','<=','>=','<','>'];
+                    break;
+                case 'DATE':
+                    operators = ['on','before', 'after'];
+            }
+        }
+
+        var op_ctl = {
+            xtype: "rallycombobox",
+            itemId: itemId,
+            store: operators,
+            margin: 5,
+            width: 80,
+            allowNoEntry: false,
+            noEntryText: '',
+            listeners: {
+                scope: this,
+                change: this._validateFilters,
+                ready: function(cb){
+                    cb.setValue(operator_value);
+                }
+            }
+        };
+        return op_ctl;
+    },
+    _getValueControl: function(field, value, item_id){
+        this.logger.log('_getValueControl',field)
+
+        var ctl = {xtype: 'rallytextfield', height: 23};
+        var type = field.get('attributeType');
+        var hasAllowedValues = ((type == 'STATE') || (type=='RATING') || field.get('isConstrained'));
+        var schema = field.get('schemaType');
+        var field_name = field.get('name');
+        var model_type = field.get('modelType');
+
+        var app = this.app;
+
+        switch(type){
+            case 'BOOLEAN':
+                ctl = {
+                    xtype: 'rallycombobox',
+                    allowNoEntry: false,
+                    store: ['true','false']
+                };
+                break;
+            case 'DATE':
+                ctl = {
+                    xtype: 'rallydatefield',
+                    allowNoEntry: false
+                };
+                break;
+            case 'TEXT':
+            case 'STRING':
+            case 'STATE':
+            case 'RATING':
+                if (hasAllowedValues){
+                    ctl = {
+                        xtype: 'rallyfieldvaluecombobox',
+                        model: model_type,
+                        field: field_name,
+                        allowNoEntry: false
+                    };
+                }
+                break;
+            case 'OBJECT':
+                //Release, Iteration, User, Project, artifact links
+                if (schema == 'Iteration') {
+                    ctl = {
+                        xtype: 'rallyiterationcombobox',
+                        allowNoEntry: false
+                    };
+                } else if (schema == 'Release') {
+                    ctl = {
+                        xtype: 'rallyreleasecombobox',
+                        allowNoEntry: false
+                    };
+                } else if (schema == 'User') {
+                    ctl = {
+                        xtype: 'rallyusersearchcombobox',
+                        project: app.getContext().getProject(),
+                        allowNoEntry: false,
+                        valueField: 'ObjectID'
+                    };
+                } else if (schema == 'Project') {
+                    ctl = {
+                        xtype: 'rallyprojectpicker',
+                        allowNoEntry: false
+                    };
+
+                } else if ( (schema == 'State') || ( schema == 'PreliminaryEstimate' ) ) {
+                    ctl = {
+                        xtype: 'rallyfieldvaluecombobox',
+                        prefix: Ext.util.Format.lowercase(schema),
+                        model: model_type,
+                        field: field_name,
+                        allowNoEntry: false
+                    };
+                }
+                break;
+            case 'INTEGER':
+                if (field_name != "FormattedID" ) {
+                    ctl = {
+                        xtype: 'rallynumberfield',
+                        allowBlank: false
+                    }
+                }
+                break;
+            case 'DECIMAL':
+            case 'QUANTITY':
+                ctl = {
+                    xtype: 'rallynumberfield',
+                    allowBlank: false
+                }
+        }
+        _.extend(ctl, {
+            itemId: item_id,
+            margin: 5,
+            listeners: {
+                scope: this,
+                change: function(cb) {
+                    if ( cb.xtype == "rallyfieldvaluecombobox" ) {
+                        cb.displayValue = cb.getRecord().get("name");
+                    }
+
+                    if ( cb.xtype == "rallyusersearchcombobox" ) {
+                        cb.displayValue = cb.getRecord().get("_refObjectName");
+                    }
+                    this._validateFilters();
+                },
+                ready: function(cb){
+                    if (value){
+                        cb.setValue(value);
+                    }
+                },
+                render: function(cb){
+                    if (value){
+                        if (cb.xtype == "rallyusersearchcombobox") {
+                            value = "/user/" + value;
+                        }
+                        if ( cb.prefix && value > 0 ) {
+                            value = "/" + cb.prefix + "/" + value;
+                        }
+
+                        cb.setValue(value);
+                    }
+                }
+            }
+        });
+        return ctl;
+    }
+});
+
+
+
+Ext.override(Ext.layout.container.Editor, {
+    calculate: function(ownerContext) {
+        console.log(ownerContext);
+        var me = this,
+            owner = me.owner,
+            autoSize = owner.autoSize,
+            fieldWidth,
+            fieldHeight;
+            
+        if (autoSize === true) {
+            autoSize = me.autoSizeDefault;
+        }
+
+        
+        if (autoSize) {
+            fieldWidth  = me.getDimension(owner, autoSize.width,  'getWidth',  owner.width);
+            fieldHeight = me.getDimension(owner, autoSize.height, 'getHeight', owner.height);
+        }
+
+        if (ownerContext.childItems[0]){
+            ownerContext.childItems[0].setSize(fieldWidth, fieldHeight);
+        }
+
+        
+        ownerContext.setWidth(fieldWidth);
+        ownerContext.setHeight(fieldHeight);
+
+        
+        ownerContext.setContentSize(fieldWidth || owner.field.getWidth(),
+                                    fieldHeight || owner.field.getHeight());
+    }
+});
+
+Ext.define('Rally.technicalservices.dialog.TemplateCopier', {
+    extend: 'Rally.ui.dialog.Dialog',
+    logger: new Rally.technicalservices.Logger(),
+    autoShow: true,
+    draggable: true,
+    width: 300,
+    modal: true,
+    config: {
+        title: 'Create Stories',
+        copyRequests: null,
+        templateArtifactKeyField: 'c_StoryType',
+        templateModel: 'HierarchicalRequirement',
+        templateFilters:[{
+            property: 'PortfolioItem',
+            value: 'portfolioitem/feature/24797386560'
+        }] 
+    },
+
+    constructor: function(config) {
+        Ext.apply(this,config);
+        this.callParent(arguments);
+    },
+    
+    initComponent: function() {
+        this.callParent(arguments);
+        this.addEvents('artifactscreated');
+        this._buildPreview();  
+        this._buildButtons();
+    },    
+    
+    _buildPreview: function(){
+        this.logger.log('_buildPreview', this.copyRequests);
+        var header = Ext.String.format('{0} Total Stories to Create', this.copyRequests.length);
+        var ct = this.add({
+            xtype: 'rallygrid',
+            layout: {
+                align: 'center'
+            },
+            store: Ext.create('Rally.data.custom.Store', {
+                data: this.copyRequests,
+                pageSize: this.copyRequests.length,
+                groupField: 'feature',
+                groupDir: 'ASC',
+                remoteSort: false,
+                getGroupString: function(record) {
+                    return ' Stories to create for ' + record.get('feature');
+                }
+            }),
+            showPagingToolbar: false,
+            features: [{
+                ftype: 'groupingsummary',
+                groupHeaderTpl: '{rows.length} {name}',
+                startCollapsed: false
+            }],
+            columnCfgs: [{dataIndex: 'storyType', text: header, flex: 1}],
+            maxHeight: 300,
+            margin: 10
+        });
+        ct.update(this.copyRequests);
+    },
+
+    _create: function(){
+         this._loadTemplatesIntoHash(this.copyRequests, this.templateArtifactKeyField).then({
+            scope: this,
+            success: this._doCopy
+        });
+    },
+    
+    _doCopy: function(templateHash){
+        var promises = [];  
+        Ext.each(this.copyRequests, function(req){
+            var copier = templateHash[req.keyFieldValue];
+            promises.push(function(){
+                var deferred = Ext.create('Deft.Deferred');
+                copier.copy(req).then({
+                    scope: this,
+                    success: function(req){
+                        deferred.resolve(req);
+                    }
+                });
+                return deferred;
+            });
+        });
+        
+        Deft.Chain.sequence(promises).then({
+            scope: this,
+            success: function(requests){
+                this.fireEvent('artifactscreated',requests);
+                this.destroy();
+            }
+        });
+    },
+    
+    _getTemplateFetch: function(copyRequests){
+        var fetch =[];
+        Ext.each(copyRequests, function(req){
+            fetch = Ext.Array.merge(fetch,req.copyFields);
+            fetch = Ext.Array.merge(fetch,_.keys(req.copyCollections));
+        });
+        return fetch; 
+    },
+    
+    _getTemplateFilters: function(copyRequests){
+        var filters= this.templateFilters;
+        return filters; 
+    },
+    
+    _loadTemplatesIntoHash: function(copyRequests, hashKeyField){
+        var deferred = Ext.create('Deft.Deferred');
+        var fetch = this._getTemplateFetch(copyRequests);
+        var filters = this._getTemplateFilters(copyRequests);
+        this._fetchTemplates(this.templateModel, fetch, filters).then({
+            scope: this,
+            success: function(records){
+                Rally.data.ModelFactory.getModel({
+                    type: this.templateModel,
+                    scope: this, 
+                    success: function(model) {
+                        templateHash = this._buildTemplateHash(records, model, hashKeyField);
+                        this.logger.log('_loadTemplatesIntoHash (fetch,filters,hashKeyField,copyRequests,templateHash)',fetch, filters, hashKeyField,copyRequests,templateHash);
+                        deferred.resolve(templateHash);
+                        
+                    }
+                });
+            }
+      });
+      return deferred; 
+    },
+    
+    _buildTemplateHash: function(records, model, hashKeyField){
+        var hash = {};
+        Ext.each(records, function(r){
+            hash[r.get(hashKeyField)] = Ext.create('Rally.technicalservices.data.Template',{
+                templateArtifact: r,
+                model: model
+            });
+        });
+        return hash; 
+    },
+
+     _fetchTemplates: function(model, fetch, filters){
+         var deferred = Ext.create('Deft.Deferred');
+         this.logger.log('_fetchTemplates',model,fetch,filters);
+         Ext.create('Rally.data.wsapi.Store',{
+             model: model,
+             fetch: fetch,
+             filters: filters, 
+             autoLoad: true,
+             context: {project: null},
+             limit: 'Infinity',
+             listeners: {
+                 scope: this,
+                 load: function(store, records, success){
+                     deferred.resolve(records);
+                 }
+             }
+         });
+         return deferred; 
+     },
+
+    _buildButtons: function(){
+        this.addDocked({
+            xtype: 'toolbar',
+            dock: 'bottom',
+            padding: '8px 0 0',
+            layout: {
+                type: 'hbox',
+                pack: 'center'
+            },
+            ui: 'footer',
+            items: [{
+                xtype: 'rallybutton',
+                itemId: 'btnCreate',
+                text: 'Create',
+                cls: 'primary small',
+                scope: this,
+                handler: this._create
+            },{
+                xtype: 'rallybutton',
+                itemId: 'cancelButton',
+                text: 'Not Now',
+                cls: 'secondary small',
+                ui: 'link',
+                scope: this,
+                handler: this.destroy
+            }]
+        });
+    }
+});
+Ext.define('CustomApp', {
+    extend: 'Rally.app.App',
+    componentCls: 'app',
+    logger: new Rally.technicalservices.Logger(),
+    items: [
+        {xtype:'container',
+            itemId:'header', 
+            layout: {type:'hbox'}, 
+            padding: 5},
+        {xtype:'container',itemId:'display_box', padding: 5, layout: {type: 'fit'}},
+        {xtype:'container',itemId:'footer', padding: 5, layout: {type: 'hbox'}}, 
+        {xtype:'tsinfolink'}
+    ],
+    config: {
+        deploymentField: 'c_CodeDeploymentSchedule',
+        deploymentFieldLabel: 'Deployment Schedule for Stories',
+        deploymentTypeField: 'c_FeatureDeploymentType',
+        deploymentTypeFilter: '^N/A',
+        storyTypeField: 'c_DoDStoryType',
+        portfolioItemFeature: 'PortfolioItem/Feature',
+        dodStatusPrefix: 'c_DoDStatus',
+        dodStatusDisplayPrefix: 'DoD Status: ',
+        requiredValue: 'Required',
+        allReleasesText: 'All Releases'
+    },
+    exportFieldMapping: {
+        'FormattedID': 'FormattedID',
+        'Name': 'Name'
+    },
+    dodFeatureFields: null,
+    /**
+     * featureArtifactHash:  a hash of arrays that hold the artifacts that contain dod stories for each feature
+     * 
+     */
+    featureArtifactHash: null,
+    featureRecords: null, 
+    //UI configurations
+    buttonWidth: 75, 
+    buttonMargin: 10,
+    noEntryText: '--',
+    
+    launch: function() {
+        this._fetchDoDFields().then({
+            scope: this,
+            success: function(fields){
+                this.dodFeatureFields = fields; 
+                this._initialize();
+            }
+        });
+    },
+    _getFeatureGrid: function(){
+        return this.down('#grid-feature');
+    },
+    _buildFeatureGrid: function(){
+        
+        this._clearGrid(); 
+        var fetch = _.union(['FormattedID','Name','_ref','Release',this.deploymentTypeField], _.keys(this.exportFieldMapping)),
+            deploymentTypeFilterRegex = new RegExp(this.deploymentTypeFilter),
+            deploymentTypeField = this.deploymentTypeField;
+
+        var currentFilters = this.currentFilters || [];
+        
+        var filters = this._getReleaseFilters();
+        filters = filters.concat(currentFilters);
+
+        this.logger.log('_buildFeatureGrid', filters);
+
+        var grid = this.down('#display_box').add({
+            xtype: 'rallygrid',
+            itemId: 'rally-grid',
+            showRowActionsColumn: false,
+            storeConfig: {
+                model: this.portfolioItemFeature,
+                fetch: fetch,
+                autoLoad: true,
+                filters: filters,
+                limit: 'Infinity',
+                pageSize: 200
+            },
+          listeners: {
+              beforeedit: function(editor, e){
+                  var storyTypeValue = this._getStoryKey(e.field);
+                  if (this._findStoryForFeature(e.record,this.featureArtifactHash,this.storyTypeField,storyTypeValue)){
+                      e.cancel = true;
+                      return false;
+                  }
+              },
+              scope: this
+            },
+            columnCfgs: this._getColumnCfgs2()
+        });
+        grid.getStore().on('load', function(store){
+            store.filterBy(function(r){
+                return !(deploymentTypeFilterRegex.test(r.get(deploymentTypeField)));
+            });
+        });
+
+    },
+    _fetchArtifactsWithStoryType: function(){
+        var deferred = Ext.create('Deft.Deferred');
+        
+        this.setLoading(true);
+        
+        var storyTypeField = this.storyTypeField;
+
+        var filters = [{
+            property: storyTypeField,
+            operator: '!=',
+            value: ''
+        },{
+            property: 'PortfolioItem',
+            operator: '!=',
+            value: null
+        }];
+
+        this.logger.log('_fetchArtifactsWithStoryType',storyTypeField, filters.toString());
+        var store = Ext.create('Rally.data.wsapi.Store',{
+            model: 'HierarchicalRequirement',
+            context: {project: null},
+            filters: filters,
+            limit: 'Infinity',
+            fetch: ['FormattedID',storyTypeField, 'PortfolioItem','ObjectID','Name','ScheduleState']
+        });
+        store.load({
+            scope: this,
+            callback: function(records, operation, success){
+                this.logger.log('_fetchArtifactsWithStoryType', success, operation, records);
+                if (success){
+                    this.featureArtifactHash = this._buildFeatureArtifactHash(records);
+                    deferred.resolve();
+                } else {
+                    this.featureArtifactHash = null;
+                    deferred.reject(operation);
+                }
+            }
+        });
+        return deferred; 
+    },
+    _buildFeatureArtifactHash: function(artifacts){
+        var hash = {};
+        Ext.each(artifacts, function(artifact){
+            var pi = artifact.get('PortfolioItem');
+            if (pi){
+                
+                hash[pi.ObjectID.toString()] = hash[pi.ObjectID] || [];
+                hash[pi.ObjectID.toString()].push(artifact);                
+            }
+        });
+        return hash;  
+    },
+    _refreshDisplay: function(cb){
+
+        this._fetchArtifactsWithStoryType().then({
+            scope: this,
+            success: function(){
+                this._buildFeatureGrid();
+                this.setLoading(false);
+            },
+            failure: function(operation){
+                this.logger.log('failed to load artifacts with story type', operation);
+                Rally.ui.notify.Notifier.showError({message: 'Failed to load stories: ' + operation.error.errors.join(',')});
+                this.setLoading(false);
+            }
+        });
+    },
+    _export: function(){
+        var grid = this._getGrid();
+        this.logger.log('_export',grid);
+
+        var filename = Ext.String.format('dod-status.csv');
+
+        var csv = Rally.technicalservices.FileUtilities.getCSVFromGrid(this,grid).then({
+            scope: this,
+            success: function(csv){
+                if (csv && csv.length > 0){
+                    Rally.technicalservices.FileUtilities.saveCSVToFile(csv,filename);
+                } else {
+                    Rally.ui.notify.Notifier.showWarning({message: 'No data to export'});
+                }
+                
+            }
+        });
+    },  
+    _update: function(){
+        this.logger.log('_update');
+        
+        var grid = this._getGrid();
+        if (grid == null){
+            Rally.ui.notify.Notifier.showWarning({message: 'No records to update'});
+            return;  
+        }
+        
+        var artifactsToCreate = [];
+        var dod_re = new RegExp(this.dodStatusPrefix);
+
+        var store = grid.getStore(); 
+        var promises = [];  
+        var createTriggerValue = 'Required';
+        var storyTypeField = this.storyTypeField; 
+        var artifactFeatureHash = this.featureArtifactHash;
+        
+        var newArtifacts = [];
+        var totalCount = store.totalCount;
+
+        for (var i=0; i<store.getCount(); i++){
+            var r = store.getAt(i);
+
+            if (!_.isEmpty(r.getChanges())){
+                promises.push(r.save());
+            }
+            
+            var obj = r.getData();
+            var keys = _.keys(obj);
+            Ext.each(keys, function(key){
+                if (dod_re.test(key)){
+                    var storyTypeValue = this._getStoryKey(key);
+                    var story = this._findStoryForFeature(r, artifactFeatureHash, storyTypeField, storyTypeValue);
+                    if (story == null) {
+                        if (obj[key] === createTriggerValue){
+                            var newArtifact = {
+                                feature: obj
+                            };
+                            newArtifact[storyTypeField] = key;
+                            newArtifacts.push(newArtifact); 
+                        }
+                       
+                    }
+
+                }
+            }, this);
+        }
+
+        if (promises.length > 0){
+            Deft.Promise.all(promises).then({
+                scope: this,
+                success: function(results){
+                    Ext.each(results, function(res){
+                        if (typeof res == 'object'){
+                            Rally.ui.notify.Notifier.showUpdate({artifact: res});
+                        } else {
+                            Rally.ui.notify.Notifier.showError({message: res});
+                        }
+                    });
+                    this._createStories(newArtifacts);
+                 }
+            });
+        } else {
+            this._createStories(newArtifacts);
+        }
+    },
+    _saveRecord: function(record){
+       var deferred = Ext.create('Deft.Deferred');
+       
+        record.save({
+           callback: function(result, operation) {
+               if(operation.wasSuccessful()) {
+                   deferred.resolve(result);
+               } else {
+                   deferred.resolve(operation.getError());
+               }
+           }
+           });
+        return deferred;  
+    },
+    _createStories: function(newArtifacts){
+        //Create Stories 
+        var store = this._getGrid().getStore();
+        var storyTypeField = this.storyTypeField; 
+
+        var copyRequests = [];
+        Ext.each(newArtifacts, function(a){
+            var cr = this._buildCopyRequest(a,storyTypeField);
+            copyRequests.push(cr);
+        },this);
+        
+        this.logger.log('_createStories', copyRequests);
+        
+        if (copyRequests.length > 0){
+            var dlg_stories = Ext.create('Rally.technicalservices.dialog.TemplateCopier',{
+                copyRequests: copyRequests,
+                templateArtifactKeyField: storyTypeField,
+                title: "Create Stories",
+                listeners: {
+                    scope: this,
+                    artifactscreated: function(requests){
+                        this.logger.log('artifacts Created',requests);
+                        this._updateGrid(requests);
+                    }
+                }
+            });
+            dlg_stories.show();
+        }
+    },
+    
+    _buildCopyRequest: function(newArtifact,storyTypeField){
+        var featureOid = newArtifact.feature.ObjectID;
+
+        var overrideFields = {"PortfolioItem": newArtifact.feature._ref};
+
+        var cr = Ext.create('Rally.technicalservices.data.CopyRequest',{
+            keyFieldValue: this._getStoryKey(newArtifact[storyTypeField]),
+            overrideFields: overrideFields,
+            parentOid: featureOid,
+            feature: newArtifact.feature.FormattedID,
+            storyType: this._getStoryKey(newArtifact[storyTypeField]),
+            transformers: {
+                "Name": function(artifact){
+                    return artifact.get('Name').replace("US Template",newArtifact.feature.FormattedID);
+                }
+            }
+        });
+        return cr;
+    },
+    
+    _getStoryTypeFieldNameFromDisplayName: function(displayName){
+        this.logger.log('_getStoryTypeFieldNameFromDisplayName',displayName);
+        var fieldName = null; 
+        Ext.Object.each(this.exportFieldMapping, function(key, val){
+            if (val === displayName){
+                fieldName = key;
+                return false;
+            }
+        });
+        return fieldName; 
+    },
+    _updateGrid: function(requests){
+      this.logger.log('_updateGrid', requests);
+      Ext.each(requests, function(r){
+          if (typeof r.artifactResult == 'object'){
+              var featureOid = r.parentOid;
+              this.featureArtifactHash[featureOid] = this.featureArtifactHash[featureOid] || []; 
+              this.featureArtifactHash[featureOid].push(r.artifactResult);
+              Rally.ui.notify.Notifier.showCreate({artifact: r.artifactResult});
+          } else {
+              var msg = Ext.String.format('Unable to create artifact: {0}',r.identifier);
+              Rally.ui.notify.Notifier.showError({message: msg});
+          }
+      }, this);
+        this._getGrid().refresh(); 
+    },
+    _getStoryKey: function(fieldName){
+        var displayName = fieldName;
+        Ext.each(this.dodFeatureFields, function(field){
+            if (field.name == fieldName){
+                displayName = field.displayName;
+                return false; 
+            }
+        });
+        return this._getStoryTypeFromDisplayName(displayName); //.replace(this.dodStatusDisplayPrefix,''); 
+    },
+    _getStoryTypeFromDisplayName: function(displayName){
+        return displayName.replace(this.dodStatusDisplayPrefix,'',"i");
+    },
+    _getReleaseFilters: function(){
+        var filters = [],
+            release = this._getReleaseRecord(),
+            releaseValue = release ? release.get('_ref') : '';
+
+        if (release){
+            if (releaseValue.length > 0){  //releaseValue == '' for All releases
+                filters = filters.concat([{   //NOTE:  Customer has requested that the release only be filtered by Name only, NOT Name & ReleaseStartDate & ReleaseDate
+                    property: 'Release.Name',
+                    value: release.get('Name')
+                }]);
+            }
+        } else {
+            filters.push({
+                property: 'Release',
+                value: null
+            });
+        }
+        return filters;
+
+    },
+    _fetchDoDFields: function(){
+        var deferred = Ext.create('Deft.Deferred');
+        var dod_fields = [];  
+        Rally.data.ModelFactory.getModel({
+            type: this.portfolioItemFeature,
+            scope: this,
+            success: function(model) {
+                var fields = model.getFields();
+                var re = new RegExp("^" + this.dodStatusPrefix ,"i");
+                Ext.each(fields, function(f){
+                    if (re.test(f.name)){
+                        this.exportFieldMapping[f.name] = this._getStoryTypeFromDisplayName(f.displayName);
+                        dod_fields.push(f);
+                    }
+                },this);
+                deferred.resolve(dod_fields);
+            }
+        });
+        return deferred;  
+    },
+    _filter: function(btn){
+        this.logger.log('_filter', this.filterFields);
+        Ext.create('Rally.technicalservices.dialog.Filter',{
+            filters: this.currentFilters,
+            title: 'Filter Features By',
+            app: this,
+            listeners: {
+                scope: this,
+                customFilter: function(filters){
+                    this.logger.log('_filter event fired',filters);
+                    this._clearGrid();
+                    
+                    this.currentFilters = filters;
+                    if (filters.length == 0){
+                        btn.removeCls('primary');
+                        btn.addCls('secondary');
+                        this.down('#filter_box').update('');
+                    } else {
+                        btn.removeCls('secondary');
+                        btn.addCls('primary');
+                        this.down('#filter_box').update(this.currentFilters);
+                    }
+
+                    this._refreshDisplay();
+                }
+            }
+        });
+    },
+    _createGrid: function(store){
+        if (this._getGrid()){
+            this._getGrid().destroy();
+        } 
+
+        var columns = this._getColumnCfgs();
+        
+        this._getBodyContainer().add({
+            xtype: 'rallygrid',
+            itemId: 'rally-grid',
+            margin: 10,
+            store: store, 
+            scope: this,
+            columnCfgs: columns,
+            showRowActionsColumn: true,
+            listeners: {
+                beforeedit: function(editor, e){
+                    if (typeof e.value == "object") {
+                        e.cancel = true; 
+                        return false; 
+                    }
+                }
+            },
+            plugins: [
+                Ext.create('Ext.grid.plugin.CellEditing', {
+                    clicksToEdit: 1
+                })
+            ]
+        });
+        
+    },
+    _getGrid: function(){
+        return this.down('#rally-grid');
+    },
+    _clearGrid: function(){
+        if (this._getGrid()){
+            this._getGrid().destroy();            
+        }
+    },
+
+
+    //_fetchChildStories: function(feature_oids, releaseValue){
+    //    var deferred = Ext.create('Deft.Deferred');
+    //
+    //    var find = {
+    //            "_TypeHierarchy": 'HierarchicalRequirement',
+    //            "__At": "current"
+    //        };
+    //    find[this.storyTypeField] = {$ne: null};
+    //    if (releaseValue){
+    //        find[this.deploymentField] = releaseValue;
+    //    } else {
+    //        find[this.deploymentField] = null;
+    //    }
+    //  //  find[this.deploymentField] = releaseValue;
+    //    this.logger.log('_fetchChildStories releaseValue',releaseValue, releaseValue == null);
+    //    var chunker = Ext.create('Rally.technicalservices.data.Chunker',{
+    //        fetch: ['FormattedID',this.storyTypeField, this.deploymentField, 'PortfolioItem','ObjectID','Name'],
+    //        find: find,
+    //        chunkField: "PortfolioItem",
+    //        chunkOids: feature_oids
+    //    });
+    //    chunker.load().then({
+    //        scope: this,
+    //        success: function(story_records){
+    //            this.logger.log('_fetchChildStories', story_records.length, story_records);
+    //            deferred.resolve(story_records);
+    //        }
+    //    });
+    //    return deferred;
+    //},
+    _findStoryForFeature: function(feature, artifactFeatureHash, storyTypeField, storyTypeValue){
+        var featureOid = feature.get('ObjectID');
+        var artifacts = artifactFeatureHash[featureOid.toString()];
+        var artifactFound = null;  
+        if (artifacts == undefined){
+            return artifactFound;
+        }
+        Ext.each(artifacts, function(artifact){
+            if (artifact.get('c_DoDStoryType') === storyTypeValue){
+                artifactFound = artifactFound || [];
+                artifactFound.push(artifact);
+               //return false;
+           } 
+        });
+        return artifactFound;
+    },
+    _getColumnCfgs2: function(){
+        var noEntryText = this.noEntryText; 
+        var dodFields = this.dodFeatureFields;
+        var featureArtifactHash = this.featureArtifactHash;  
+        var findStory = this._findStoryForFeature;
+        var dodStatusDisplayPrefix = this.dodStatusDisplayPrefix; 
+        var me = this;  
+        
+        var columns = 
+            [{
+                xtype: 'rallyrowactioncolumn',
+                rowActionsFn: function(record){
+                    return [{
+                        text: 'Set Required', 
+                        record: record,
+                        scope: this,
+                        handler: function(item){
+
+                            Ext.each(dodFields, function(f){
+                                var storyTypeValue = f.displayName.replace(dodStatusDisplayPrefix,'',"i")
+                                var story = findStory(item.record, featureArtifactHash,f.name, storyTypeValue);
+                                if (story == null){
+                                    item.record.set(f.name, 'Required');                                    
+                                }
+                            }, this);
+                        }
+                    },{
+                        text: 'Set Exemption Requested', 
+                        record: record, 
+                        scope: this,
+                        handler: function(item){
+                            Ext.each(dodFields, function(f){
+                                var storyTypeValue = f.displayName.replace(dodStatusDisplayPrefix,'',"i")
+                                var story = findStory(item.record, featureArtifactHash,f.name, storyTypeValue);
+                                if (story == null){
+                                    item.record.set(f.name, 'Exemption Requested');
+                                }
+                            }, this);
+                        }
+                    }];
+               } 
+            },{
+                text:'Feature',
+                dataIndex:'FormattedID',
+                flex: 1,
+                renderer: function(v,m,r){
+                    var link_text= Ext.String.format('{0}: {1}', v, r.get('Name'));
+                    return Rally.nav.DetailLink.getLink({record: r.get('_ref'), text: link_text});
+                },
+                exportRenderer: function(v,m,r){
+                    return Ext.String.format('{0}: {1}', v, r.get('Name'));
+                }
+          }];
+        
+        Ext.each(this.dodFeatureFields, function(f){
+            var state_prefixes = {'In-Progress': 'P'};
+            var col = {
+                  text: this._getStoryTypeFromDisplayName(f.displayName),  //.replace(this.dodStatusDisplayPrefix,'',"i"),
+                  dataIndex: f.name,
+                  renderer: function(v,m,r){
+                      var storyTypeValue = f.displayName.replace(dodStatusDisplayPrefix,'',"i"),
+                          story = findStory(r, featureArtifactHash,f.name, storyTypeValue),
+                          txt = null,
+                          all_accepted = true;
+
+                      if (story){
+                          var links = [];
+
+                          _.each(story, function(s){
+                              var style_str = '';
+                              var state = s.get('ScheduleState');
+                              
+                              console.log('s', s.get('FormattedID'), state);
+                              
+                              if (state != 'Accepted'){
+                                  style_str = 'class="not-accepted"';
+                              }
+                              
+                              var story_text = s.get('FormattedID');
+                              var state_prefix = state_prefixes[state] || state.charAt(0);
+                                                            
+                              links.push(Ext.String.format('<div {0}>{1} {2}</div>',
+                                  style_str, 
+                                  Rally.nav.DetailLink.getLink({
+                                      record: '/hierarchicalrequirement/'+ s.get('ObjectID'),
+                                      text: story_text
+                                  }),
+                                 Ext.String.format('<span class="schedule-state-wrapper"><span state-data="{0}" class="schedule-state current-state">{1}</span></span>', state, state_prefix )
+                              ));
+                                  
+                          });
+
+                          if (links.length > 0){
+                            txt = links.join('');
+                          }
+                          return txt;
+                      }
+
+                      if (v == 'Required' || v =='Exemption Requested'){
+                          m.style = "background-color:yellow;";
+                      }
+                      //if (all_accepted == false){
+                      //    m.style = "background-color:yellow;";
+                      //}
+                      return  v || noEntryText;
+                  },
+                  exportRenderer: function(v,m,r){
+                      var storyTypeValue = f.displayName.replace(dodStatusDisplayPrefix,'',"i");
+                      var story = findStory(r, featureArtifactHash,f.name, storyTypeValue);
+                      if ( Ext.isArray(story) ) {
+                        return Ext.Array.map(story, function(s) {
+                            return s.get('FormattedID');
+                        }). join(';');
+                      }
+                      if (story){
+                        console.log('story', story);
+                        return Ext.String.format('{0}', story.get('FormattedID')); 
+                      }
+                      return v || noEntryText;
+                      
+                  }
+            };
+            columns.push(col);
+        },this);
+        return columns;
+    },
+    _getExportButton: function(){
+        return this.down('#btn-export');
+    },
+    _getUpdateButton: function(){
+        return this.down('#btn-update');
+    },
+    _getHeaderContainer: function(){
+        return this.down('#header');
+    },
+    _getFooterContainer: function(){
+        return this.down('#footer');
+    },
+    _getBodyContainer: function(){
+        return this.down('#display_box');
+    },
+    _getReleaseRecord: function(){
+        return this.down('#cb-release').getRecord();
+    },
+    _getStoryDeploymentValue: function(){
+        return null;
+    },
+    _initialize: function(){
+
+        this._getHeaderContainer().add({
+            xtype: 'rallyreleasecombobox',
+            fieldLabel: 'Release',
+            itemId: 'cb-release',
+            context: {
+                project: this.getContext().getProject()._ref,
+                projectScopeDown: this.getContext().getProjectScopeDown(),
+                projectScopeUp: false
+            },
+            allowNoEntry: true,
+            labelAlign: 'right',
+            margin: 10,
+            width: 300,
+            listeners: {
+                scope: this,
+                change: this._refreshDisplay,
+                ready: this._refreshDisplay
+
+            },
+            storeConfig: {
+                listeners: {
+                    scope: this,
+                    load: this._addAllOption
+                }
+            }
+        });
+
+        this._getHeaderContainer().add({
+            xtype: 'rallybutton',
+            itemId: 'btn-filter',
+            scope: this,
+            cls: 'small-icon secondary',
+            iconCls: 'icon-filter',
+            margin: 10,
+            handler: this._filter
+        });
+
+        this._getHeaderContainer().add({
+            xtype:'container',
+            itemId: 'filter_box',
+            margin: 10,
+            tpl:'<div class="ts-filter"><i>Filters:&nbsp;<tpl for=".">{displayProperty} {operator} {displayValue}&nbsp;&nbsp;&nbsp;&nbsp;</tpl></i></div>'});
+
+        this._getHeaderContainer().add({
+            xtype: 'component',
+            flex: 1
+        });
+        this._getHeaderContainer().add({
+            xtype: 'rallybutton',
+            text: 'Export',
+            itemId: 'btn-export',
+            margin: 10,
+            scope: this,
+            width: this.buttonWidth,
+            handler: this._export
+        });
+
+
+        this._getFooterContainer().add({
+            xtype: 'component',
+            flex: 1
+        });
+        this._getFooterContainer().add({
+            xtype: 'rallybutton',
+            text: 'Update',
+            itemId: 'btn-update',
+            width: this.buttonWidth,
+            margin: 10,
+            scope: this,
+            handler: this._update
+        });
+    },
+    _addAllOption: function(store){
+        store.add({Name: this.allReleasesText, formattedName: this.allReleasesText});
+    }
+});
+            
+               Rally.launchApp('CustomApp', {
+                   name: 'Feature Definition of Done Story Creator'
+               });
+        });
+    </script>
+    
+    <style type="text/css">
+
+.app {
+}
+.tsinfolink {
+    position:absolute;
+    right:0px;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    text-align: center;
+    color: white;
+    background: #C0C0C0;
+    border-style: solid;
+    border-width: 1px;
+    margin-top: 25px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+.approved: {
+	color: 'red';
+	background-color: 'green'
+	
+}
+.rightbutton {
+	align: 'right';
+}
+.highlighted-status {
+    background: 'yellow';
+    background-color: 'yellow';
+}
+.not-accepted a:link { background-color:yellow;}
+
+.schedule-state-wrapper .schedule-state.current-state{
+    padding: 1px 2px 1px 2px;
+}
+
+.schedule-state-wrapper .schedule-state {
+    float: none;
+    font-size: 10px;
+}
+    </style>
+
+</head>
+<body></body>
+</html>
